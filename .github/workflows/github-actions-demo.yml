@@ -2,6 +2,15 @@ name: Build & Run LAB9
 run-name: Quelques tests de ${{ github.actor }} 
 on: [push]
 jobs:
+
+  install:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3 # docs https://pnpm.io/continuous-integration#github-actions
+
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
     steps:
