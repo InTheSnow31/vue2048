@@ -82,12 +82,14 @@ jobs:
           path: dist/
       
       - name: Déploiement QA
-        run: echo "Déploiement sur QA en cours..."
+        run: |
+             echo "Déploiement sur QA en cours..." &&
              pnpx @azure/static-web-apps-cli deploy ./dist --app-name stapp-vue2048-qa --env=production
         
 
       - name: Déploiement PROD
-        run: echo "Déploiement sur PROD en cours..."
+        run: |
+             echo "Déploiement sur PROD en cours..." &&
              pnpx @azure/static-web-apps-cli deploy ./dist --app-name stapp-vue2048-prod --env=production
 
 
