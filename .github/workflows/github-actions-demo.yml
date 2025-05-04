@@ -1,0 +1,113 @@
+name: Build & Run LAB9
+run-name: Quelques tests de ${{ github.actor }} 
+
+# Sur quelles conditions le workflow doit-il être déclenché ?
+
+on:
+  push:
+    branches: [main, lab9]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environnement de déploiement (qa / prod) ?'
+        required: false
+        default: 'qa'
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install
+
+  build:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install
+      - run: pnpm build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+
+  lint:
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install
+      - run: pnpm lint
+
+  type-check:
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install
+      - run: pnpm type-check
+
+  test:
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    needs: [setup, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install
+      - run: pnpm test
+
+  deploy:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du build
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+      
+      - name: Déploiement QA
+        if: ${{ github.event.inputs.environment == 'qa' }}
+        run: echo "Déploiement sur QA en cours..."
+
+      - name: Déploiement PROD
+        if: ${{ github.event.inputs.environment == 'prod' }}
+        run: echo "Déploiement sur PROD en cours..."
+
+
+
+# default:
+      #   image: node:latest
+      #   cache: &global_cache
+      #     key:
+      #       files:
+      #         - pnpm-lock.yaml
+      #     paths:
+      #       - .pnpm-store
+      #       - node_modules/
+      #     policy: pull
+      #   before_script:
+      #     - corepack enable
+      #     - corepack prepare pnpm@latest-10 --activate
+      #     - pnpm config set store-dir .pnpm-store
+      #     - pnpm install
+      
+      
+      
+      
+      
