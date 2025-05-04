@@ -1,40 +1,97 @@
 name: Build & Run LAB9
 run-name: Quelques tests de ${{ github.actor }} 
-on: [push]
-jobs:
 
-  install-job:
+# Sur quelles conditions le workflow doit-il être déclenché ?
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environnement de déploiement (qa / prod) ?'
+        required: false
+        default: 'qa'
+
+jobs:
+  setup:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install
 
-    - name: Use Node.js 
-      uses: actions/setup-node@v4
+  build:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install
+      - run: pnpm build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: dist/
 
-    - name: Install dependencies
-      run: pnpm install
+  lint:
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install
+      - run: pnpm lint
 
-    - name: static-typing
-      run: pnpm type-check
+  type-check:
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install
+      - run: pnpm type-check
 
-    - name: lint-job
-      run: pnpm lint
+  test:
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    needs: [setup, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install
+      - run: pnpm test
 
-    - name: build-job
-      run: pnpm build
-      #cache:
-      #<<: *global_cache
-      #policy: pull-push
-
-      #artifacts:
-      #paths:
-      #- dist/
+  deploy:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du build
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist/
       
-    - name: test-job
-      run: pnpm test
-      # default:
+      - name: Déploiement QA
+        if: ${{ github.event.inputs.environment == 'qa' }}
+        run: echo "Déploiement sur QA en cours..."
+
+      - name: Déploiement PROD
+        if: ${{ github.event.inputs.environment == 'prod' }}
+        run: echo "Déploiement sur PROD en cours..."
+
+
+
+# default:
       #   image: node:latest
       #   cache: &global_cache
       #     key:
