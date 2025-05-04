@@ -4,15 +4,18 @@ run-name: Quelques tests de ${{ github.actor }}
 # Sur quelles conditions le workflow doit-il être déclenché ?
 
 on:
+  schedule:
+    - cron: '0 8 * * 1'  # Lundi à 08:00 UTC
   push:
     branches: [main, lab9]
   pull_request:
   workflow_dispatch:
-  #  inputs:
-  #    environment:
-  #      description: 'Environnement de déploiement (qa / prod)'
-  #      required: false
-  #      default: 'qa'
+    inputs:
+      run_checks:
+        description: 'Exécuter les analyses statiques et les tests ? (false/true)'
+        required: false
+        default: true
+        type: boolean
 
 jobs:
   setup:
@@ -36,9 +39,10 @@ jobs:
         with:
           name: build-output
           path: dist/
+          retention-days: ${{ github.ref_name == 'main' && 7 || 1 }}
 
   lint:
-    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main' || github.event.inputs.run_checks == 'true'
     needs: setup
     runs-on: ubuntu-latest
     steps:
@@ -49,7 +53,7 @@ jobs:
       - run: pnpm lint
 
   type-check:
-    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main' || github.event.inputs.run_checks == 'true'
     needs: setup
     runs-on: ubuntu-latest
     steps:
@@ -60,7 +64,7 @@ jobs:
       - run: pnpm type-check
 
   test:
-    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main' || github.event.inputs.run_checks == 'true'
     needs: [setup, build]
     runs-on: ubuntu-latest
     steps:
@@ -71,10 +75,10 @@ jobs:
       - run: pnpm test
 
   deploy:
-    #if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' 
     needs: build
     runs-on: ubuntu-latest
-    environment: 'production'
+    environment: production #J'aurais dû appeller ça autrement, je modifierai par "deploiement" plus tard
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -97,26 +101,6 @@ jobs:
         run: |
              echo "Déploiement sur PROD en cours..." &&
              pnpx @azure/static-web-apps-cli deploy ./dist --app-name stapp-vue2048-prod --env=production --deployment-token ${{ secrets.AZURE_STATIC_WEB_APPS_TOKEN }}
-
-
-
-# default:
-      #   image: node:latest
-      #   cache: &global_cache
-      #     key:
-      #       files:
-      #         - pnpm-lock.yaml
-      #     paths:
-      #       - .pnpm-store
-      #       - node_modules/
-      #     policy: pull
-      #   before_script:
-      #     - corepack enable
-      #     - corepack prepare pnpm@latest-10 --activate
-      #     - pnpm config set store-dir .pnpm-store
-      #     - pnpm install
-      
-      
       
       
       
