@@ -8,11 +8,11 @@ on:
     branches: [main, lab9]
   pull_request:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environnement de déploiement (qa / prod) ?'
-        required: false
-        default: 'qa'
+  #  inputs:
+  #    environment:
+  #      description: 'Environnement de déploiement (qa / prod)'
+  #      required: false
+  #      default: 'qa'
 
 jobs:
   setup:
@@ -82,12 +82,13 @@ jobs:
           path: dist/
       
       - name: Déploiement QA
-        if: ${{ github.event.inputs.environment == 'qa' }}
         run: echo "Déploiement sur QA en cours..."
+             pnpx @azure/static-web-apps-cli deploy ./dist --app-name stapp-vue2048-qa --env=production
+        
 
       - name: Déploiement PROD
-        if: ${{ github.event.inputs.environment == 'prod' }}
         run: echo "Déploiement sur PROD en cours..."
+             pnpx @azure/static-web-apps-cli deploy ./dist --app-name stapp-vue2048-prod --env=production
 
 
 
