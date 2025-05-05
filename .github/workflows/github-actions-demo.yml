@@ -1,5 +1,5 @@
-name: Build & Run LAB9
-run-name: Quelques tests de ${{ github.actor }} 
+name: Lab9 - Génie logiciel
+run-name: LAB9 de ${{ github.actor }} 
 
 # Sur quelles conditions le workflow doit-il être déclenché ?
 
@@ -7,7 +7,7 @@ on:
   schedule:
     - cron: '0 8 * * 1'  # Lundi à 08:00 UTC
   push:
-    branches: [main, lab9]
+    branches: [main, lab9] #J'ai rajouté lab9 pour faciliter mes tests
   pull_request:
   workflow_dispatch:
     inputs:
