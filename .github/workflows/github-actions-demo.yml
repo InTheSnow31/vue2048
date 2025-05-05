@@ -7,6 +7,8 @@ on:
   schedule:
     - cron: '0 8 * * 1'  # Lundi à 08:00 UTC
   push:
+    paths-ignore:
+      - 'docs/**'
     branches: [main, lab9] #J'ai rajouté lab9 pour faciliter mes tests
   pull_request:
   workflow_dispatch:
@@ -41,6 +43,7 @@ jobs:
       - run: pnpm install
       - run: pnpm build
       - uses: actions/upload-artifact@v4
+        if: github.ref_name == github.event.repository.default_branch
         with:
           name: build-output
           path: dist/
